@@ -21,10 +21,19 @@ export default function SegmentsTab({ stats, budgetConfig, onUpdateBudget, budge
     yeongam: budgetConfig.yeongam,
     jeju2: budgetConfig.jeju2,
   })
+  // 텍스트 입력 전용 raw state — 타이핑 중 스냅 없이 자유 입력 허용
+  const [rawInputs, setRawInputs] = useState<Record<string, string>>({
+    reserve: String(Math.round((budgetConfig.reserve || 0) / 10000)),
+    jeju1: String(Math.round((budgetConfig.jeju1 || 0) / 10000)),
+    yeongam: String(Math.round((budgetConfig.yeongam || 0) / 10000)),
+    jeju2: String(Math.round((budgetConfig.jeju2 || 0) / 10000)),
+  })
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
+  // 슬라이더 및 최종 값 커밋용 — 50K 단위 스냅 적용
   const handleChange = useCallback((key: string, rawVal: number) => {
     const val = Math.round(rawVal / STEP) * STEP
+    setRawInputs(prev => ({ ...prev, [key]: String(Math.round(val / 10000)) }))
     setDraft(prev => {
       const next = { ...prev, [key]: val }
       const total = Object.values(next).reduce((s, v) => s + v, 0)
@@ -38,14 +47,27 @@ export default function SegmentsTab({ stats, budgetConfig, onUpdateBudget, budge
     })
   }, [onUpdateBudget])
 
+  // 텍스트 입력 blur/Enter 시 호출 — 파싱 후 handleChange로 위임
+  const handleInputCommit = useCallback((key: string) => {
+    const raw = rawInputs[key] ?? ''
+    const parsed = parseFloat(String(raw).replace(/,/g, ''))
+    if (isNaN(parsed) || parsed < 0) {
+      setRawInputs(prev => ({ ...prev, [key]: String(Math.round((draft[key] || 0) / 10000)) }))
+      return
+    }
+    handleChange(key, parsed * 10000)
+  }, [rawInputs, draft, handleChange])
+
   const draftTotal = Object.values(draft).reduce((s, v) => s + v, 0)
   const gap = TOTAL_BUDGET - draftTotal
   const isBalanced = Math.abs(gap) < 1000
 
+  // 슬라이더 max를 동일 기준으로 통일 (전체 예산의 70%)
+  const SEG_SLIDER_MAX = Math.round(TOTAL_BUDGET * 0.7)
   const SEG_META = [
-    { key: 'jeju1', color: SEG_COLORS.jeju1, bg: '#eef2ff', max: Math.round(TOTAL_BUDGET * 0.6) },
-    { key: 'yeongam', color: SEG_COLORS.yeongam, bg: '#f0fdf4', max: Math.round(TOTAL_BUDGET * 0.8) },
-    { key: 'jeju2', color: SEG_COLORS.jeju2, bg: '#fff1f2', max: Math.round(TOTAL_BUDGET * 0.7) },
+    { key: 'jeju1', color: SEG_COLORS.jeju1, bg: '#eef2ff', max: SEG_SLIDER_MAX },
+    { key: 'yeongam', color: SEG_COLORS.yeongam, bg: '#f0fdf4', max: SEG_SLIDER_MAX },
+    { key: 'jeju2', color: SEG_COLORS.jeju2, bg: '#fff1f2', max: SEG_SLIDER_MAX },
   ]
 
   return (
@@ -91,8 +113,10 @@ export default function SegmentsTab({ stats, budgetConfig, onUpdateBudget, budge
             </div>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <input type="number" value={Math.round((draft.reserve || 0) / 10000)}
-              onChange={e => { const v = Number(e.target.value) * 10000; if (!isNaN(v) && v >= 0) handleChange('reserve', v) }}
+            <input type="number" value={rawInputs.reserve}
+              onChange={e => setRawInputs(prev => ({ ...prev, reserve: e.target.value }))}
+              onBlur={() => handleInputCommit('reserve')}
+              onKeyDown={e => { if (e.key === 'Enter') handleInputCommit('reserve') }}
               style={{ width: 80, padding: '5px 8px', border: '1px solid #b4530950', borderRadius: 7, fontSize: 13, fontWeight: 700, color: '#b45309', background: '#fff', textAlign: 'right', outline: 'none' }} />
             <span style={{ fontSize: 12, color: '#b45309', fontWeight: 600, whiteSpace: 'nowrap' }}>만원</span>
           </div>
@@ -134,7 +158,7 @@ export default function SegmentsTab({ stats, budgetConfig, onUpdateBudget, budge
               </Badge>
             </div>
 
-            <ProgressBar value={d.total} max={bgt} color={color} />
+            <ProgressBar value={bgt} max={TOTAL_BUDGET} color={color} />
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(110px, 1fr))', gap: 10, marginTop: 12 }}>
               <Metric label="배정 예산" value={fmt(bgt) + '원'} color={color} small />
@@ -155,8 +179,10 @@ export default function SegmentsTab({ stats, budgetConfig, onUpdateBudget, budge
                       {delta > 0 ? '▲' : '▼'} {fmt(Math.abs(delta))}원
                     </span>
                   )}
-                  <input type="number" value={Math.round(bgt / 10000)}
-                    onChange={e => { const v = Number(e.target.value) * 10000; if (!isNaN(v) && v >= 0) handleChange(key, v) }}
+                  <input type="number" value={rawInputs[key] ?? ''}
+                    onChange={e => setRawInputs(prev => ({ ...prev, [key]: e.target.value }))}
+                    onBlur={() => handleInputCommit(key)}
+                    onKeyDown={e => { if (e.key === 'Enter') handleInputCommit(key) }}
                     style={{ width: 80, padding: '4px 8px', border: `1px solid ${color}50`, borderRadius: 7, fontSize: 13, fontWeight: 700, color, background: '#fff', textAlign: 'right', outline: 'none' }} />
                   <span style={{ fontSize: 11, color, fontWeight: 600, whiteSpace: 'nowrap' }}>만원</span>
                 </div>

@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: '스마트 이무 대시보드 | 사회혁신학기 2026',
+  title: '스마트 지출 정리 보드 | 사회혁신학기 2026',
   description: '경포대학교 고성리 프로젝트 - 실시간 공유 예산 관리 시스템',
 }
 

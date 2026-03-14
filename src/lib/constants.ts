@@ -1,26 +1,27 @@
+export const APP_NAME = '스마트 지출 정리 보드'
 export const TOTAL_BUDGET = 42000000
 export const HEADCOUNT = 15
 
-export const PROJECT_START = '2026-03-14'
-export const PROJECT_END = '2026-06-28'
+export const PROJECT_START = '2026-03-15'
+export const PROJECT_END = '2026-06-19'
 
 export const SEGMENTS: Record<string, { label: string; start: string; end: string; icon: string }> = {
   jeju1: {
     label: '제주 1차',
-    start: '2026-03-14',
+    start: '2026-03-15',
     end: '2026-03-31',
     icon: '🏝️',
   },
   yeongam: {
     label: '영암',
-    start: '2026-04-01',
-    end: '2026-05-14',
+    start: '2026-04-07',
+    end: '2026-05-13',
     icon: '🏕️',
   },
   jeju2: {
     label: '제주 2차 (축제)',
-    start: '2026-05-15',
-    end: '2026-06-28',
+    start: '2026-05-19',
+    end: '2026-06-19',
     icon: '🎪',
   },
 }

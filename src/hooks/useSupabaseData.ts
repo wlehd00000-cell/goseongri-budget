@@ -68,8 +68,11 @@ export function useSupabaseData() {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'expenses' }, (payload) => {
         setExpenses(prev => {
           if (payload.eventType === 'INSERT') {
+            const newExp = payload.new as Expense
+            // 낙관적 업데이트로 이미 추가된 경우 중복 방지
+            if (prev.some(e => e.id === newExp.id)) return prev
             showToast()
-            return [payload.new as Expense, ...prev]
+            return [newExp, ...prev]
           }
           if (payload.eventType === 'UPDATE') {
             showToast()

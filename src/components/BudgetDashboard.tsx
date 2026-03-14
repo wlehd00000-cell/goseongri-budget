@@ -3,8 +3,8 @@ import React, { useMemo, useCallback, useState } from 'react'
 import { useSupabaseData } from '@/hooks/useSupabaseData'
 import { computeStats } from '@/lib/computeStats'
 import {
-  TOTAL_BUDGET, HEADCOUNT, SEGMENTS, SEG_COLORS,
-  COLORS, fmt, todayStr, INITIAL_BUDGET_CONFIG
+  APP_NAME, TOTAL_BUDGET, HEADCOUNT, SEGMENTS, SEG_COLORS,
+  COLORS, fmt, fmtMan, todayStr, INITIAL_BUDGET_CONFIG
 } from '@/lib/constants'
 import OverviewTab from './OverviewTab'
 import SegmentsTab from './SegmentsTab'
@@ -89,7 +89,6 @@ export default function BudgetDashboard() {
     else if (bgt > 0 && d.total > bgt * 0.85) warnings.push({ level: 'warn', msg: `[${seg.label}] 집행률 ${((d.total / bgt) * 100).toFixed(0)}% → 잔액 ${fmt(bgt - d.total)}원` })
     if (d.projected > bgt && d.segElapsed > 3) warnings.push({ level: 'warn', msg: `[${seg.label}] 번레이트 기준 예상 집행 ${fmt(d.projected)}원 → 배정 초과 전망.` })
   })
-  if (stats.perCapitaDaily > 30000) warnings.push({ level: 'warn', msg: `1인 일평균 지출 ${fmt(stats.perCapitaDaily)}원 → 기준액(3만원) 초과.` })
   if (stats.reimbPendingTotal > 0) warnings.push({ level: 'warn', msg: `💳 개인 결제 미정산 ${stats.reimbPendingCount}건, 총 ${fmt(stats.reimbPendingTotal)}원 → 소급 처리 필요.` })
 
   // 동기화 표시
@@ -120,7 +119,7 @@ export default function BudgetDashboard() {
                 Social Innovation Semester 2026
               </div>
               <h1 style={{ fontSize: 20, fontWeight: 800, margin: '4px 0 0', color: '#fff', letterSpacing: -0.5 }}>
-                스마트 이무 대시보드 <span style={{ fontSize: 11, fontWeight: 500, color: '#64748b' }}>v3.1</span>
+                {APP_NAME} <span style={{ fontSize: 11, fontWeight: 500, color: '#64748b' }}>v3.1</span>
               </h1>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
@@ -141,13 +140,13 @@ export default function BudgetDashboard() {
           {/* KPI STRIP */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8, marginTop: 16 }}>
             {[
-              { label: '가용 예산', val: fmt(stats.operating) + '원', color: '#fff' },
-              { label: '총 집행 (실제+예정)', val: fmt(stats.total) + '원', color: stats.total > stats.operating ? '#f87171' : '#34d399' },
-              { label: '잔액', val: fmt(Math.max(stats.remaining, 0)) + '원', color: stats.remaining < stats.operating * 0.1 ? '#f87171' : '#a78bfa' },
+              { label: '가용 예산', val: fmtMan(stats.operating) + '원', color: '#fff' },
+              { label: '총 집행 (실제+예정)', val: fmtMan(stats.total) + '원', color: stats.total > stats.operating ? '#f87171' : '#34d399' },
+              { label: '잔액', val: fmtMan(Math.max(stats.remaining, 0)) + '원', color: stats.remaining < stats.operating * 0.1 ? '#f87171' : '#a78bfa' },
             ].map((k, i) => (
               <div key={i} style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 10, padding: '12px 14px', border: '1px solid rgba(255,255,255,0.07)' }}>
                 <div style={{ fontSize: 10, color: '#64748b', fontWeight: 600, marginBottom: 4 }}>{k.label}</div>
-                <div style={{ fontSize: 18, fontWeight: 800, color: k.color }}>{k.val}</div>
+                <div className="kpi-val" style={{ fontSize: 18, fontWeight: 800, color: k.color, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{k.val}</div>
               </div>
             ))}
           </div>
@@ -209,10 +208,10 @@ export default function BudgetDashboard() {
           <div style={{ background: 'linear-gradient(90deg, #fef2f2, #fff7ed)', border: '1px solid #fecaca', borderRadius: 10, padding: '12px 16px', marginBottom: 16 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: warnings.length > 1 ? 6 : 0 }}>
               <span style={{ fontSize: 15 }}>🚨</span>
-              <span style={{ fontWeight: 800, color: COLORS.danger, fontSize: 13 }}>페이스메이커 경고 ({warnings.length}건)</span>
+              <span style={{ fontWeight: 800, color: COLORS.danger, fontSize: 13 }}>예산 경고 ({warnings.length}건)</span>
             </div>
             {warnings.map((w, i) => (
-              <div key={i} style={{ color: w.level === 'error' ? COLORS.danger : COLORS.warning, fontSize: 12, marginLeft: 24, marginTop: 3, lineHeight: 1.5, fontWeight: w.level === 'error' ? 700 : 500 }}>
+              <div key={i} style={{ color: w.level === 'error' ? COLORS.danger : COLORS.warning, fontSize: 12, marginLeft: 24, marginTop: 3, lineHeight: 1.5, fontWeight: w.level === 'error' ? 700 : 500, wordBreak: 'break-word' }}>
                 {w.level === 'error' ? '🔴' : '🟡'} {w.msg}
               </div>
             ))}
@@ -255,8 +254,8 @@ export default function BudgetDashboard() {
         )}
 
         {/* FOOTER */}
-        <div style={{ marginTop: 28, textAlign: 'center', fontSize: 10, color: COLORS.textMuted, lineHeight: 1.7 }}>
-          사회혁신학기 2026 · 경포대학교 고성리 프로젝트 · 스마트 이무 시스템 v3.1
+        <div style={{ marginTop: 28, textAlign: 'center', fontSize: 10, color: COLORS.textMuted, lineHeight: 1.7, wordBreak: 'break-word' }}>
+          사회혁신학기 2026 · 경포대학교 고성리 프로젝트 · {APP_NAME} v3.1
           <br />이원 {HEADCOUNT}명 | 총예산 {fmt(TOTAL_BUDGET)}원 | 예비비 {fmt(stats.reserve)}원 | 가용 {fmt(stats.operating)}원
           <br />⚡ 실시간 공유 스토리지 · Supabase Realtime · 팀원 지출 등록 즉시 반영
         </div>
